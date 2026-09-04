@@ -10,6 +10,7 @@
     <header>
       <h1>Mergington High School</h1>
       <h2>Extracurricular Activities</h2>
+      <div id="auth-status"></div>
     </header>
 
     <main>
@@ -23,6 +24,18 @@
 
       <section id="signup-container">
         <h3>Sign Up for an Activity</h3>
+        <p id="teacher-only-message">Teacher login is required to change registrations.</p>
+        <form id="login-form">
+          <div class="form-group">
+            <label for="username">Teacher Username:</label>
+            <input type="text" id="username" required />
+          </div>
+          <div class="form-group">
+            <label for="password">Teacher Password:</label>
+            <input type="password" id="password" required />
+          </div>
+          <button type="submit">Teacher Login</button>
+        </form>
         <form id="signup-form">
           <div class="form-group">
             <label for="email">Student Email:</label>

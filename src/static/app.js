@@ -2,7 +2,35 @@ document.addEventListener("DOMContentLoaded", () => {
   const activitiesList = document.getElementById("activities-list");
   const activitySelect = document.getElementById("activity");
   const signupForm = document.getElementById("signup-form");
+  const loginForm = document.getElementById("login-form");
+  const authStatus = document.getElementById("auth-status");
+  const teacherOnlyMessage = document.getElementById("teacher-only-message");
   const messageDiv = document.getElementById("message");
+  let isTeacher = false;
+
+  function updateAuthUI(username) {
+    isTeacher = Boolean(username);
+    loginForm.classList.toggle("hidden", isTeacher);
+    signupForm.classList.toggle("hidden", !isTeacher);
+    teacherOnlyMessage.classList.toggle("hidden", isTeacher);
+    authStatus.innerHTML = isTeacher
+      ? `<span>Signed in as ${username}</span><button id="logout-button">Log out</button>`
+      : "<span>Students can view activities. Teachers can manage registrations.</span>";
+    const logoutButton = document.getElementById("logout-button");
+    if (logoutButton) logoutButton.addEventListener("click", handleLogout);
+  }
+
+  async function checkAuth() {
+    const response = await fetch("/auth/me");
+    const result = await response.json();
+    updateAuthUI(result.authenticated ? result.username : null);
+  }
+
+  async function handleLogout() {
+    await fetch("/logout", { method: "POST" });
+    updateAuthUI(null);
+    fetchActivities();
+  }
 
   // Function to fetch activities from API
   async function fetchActivities() {
@@ -30,7 +58,11 @@ document.addEventListener("DOMContentLoaded", () => {
                 ${details.participants
                   .map(
                     (email) =>
-                      `<li><span class="participant-email">${email}</span><button class="delete-btn" data-activity="${name}" data-email="${email}">❌</button></li>`
+                      `<li><span class="participant-email">${email}</span>${
+                        isTeacher
+                          ? `<button class="delete-btn" data-activity="${name}" data-email="${email}">❌</button>`
+                          : ""
+                      }</li>`
                   )
                   .join("")}
               </ul>
@@ -155,6 +187,31 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
+  loginForm.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const response = await fetch("/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        username: document.getElementById("username").value,
+        password: document.getElementById("password").value,
+      }),
+    });
+    const result = await response.json();
+    if (response.ok) {
+      loginForm.reset();
+      updateAuthUI(result.username);
+      fetchActivities();
+      messageDiv.textContent = "Teacher login successful";
+      messageDiv.className = "success";
+    } else {
+      messageDiv.textContent = result.detail || "Login failed";
+      messageDiv.className = "error";
+    }
+    messageDiv.classList.remove("hidden");
+  });
+
   // Initialize app
+  checkAuth();
   fetchActivities();
 });
